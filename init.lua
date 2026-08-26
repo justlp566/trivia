@@ -65,9 +65,14 @@ local function get_random_question()
     return questions[math.random(#questions)]
 end
 
+-- Trim whitespace from string (Lua doesn't have built-in trim)
+local function trim(str)
+    return str:match("^%s*(.-)%s*$")
+end
+
 -- Check if answer is correct
 local function check_answer(question, player_answer)
-    local normalized_answer = string.lower(string.trim(player_answer))
+    local normalized_answer = string.lower(trim(player_answer))
     for _, alt in ipairs(question.alternatives) do
         if normalized_answer == string.lower(alt) then
             return true
@@ -79,16 +84,22 @@ end
 -- Give diamond sword reward
 local function give_reward(player_name)
     local player = core.get_player_by_name(player_name)
-    if not player then return false end
+    if not player then 
+        return false, "Player not found"
+    end
     
     local inv = player:get_inventory()
+    if not inv then
+        return false, "Could not access inventory"
+    end
+    
     local diamond_sword = ItemStack("default:diamond_sword")
     
     if inv:room_for_item("main", diamond_sword) then
         inv:add_item("main", diamond_sword)
-        return true
+        return true, "Diamond sword added to inventory"
     else
-        return false
+        return false, "Inventory full"
     end
 end
 
@@ -108,11 +119,11 @@ core.register_chatcommand("trivia", {
             trivia.sessions[name] = nil
             
             if check_answer(question, player_answer) then
-                local reward_given = give_reward(name)
-                if reward_given then
+                local success, msg = give_reward(name)
+                if success then
                     return true, "✓ Correct! The answer was '" .. question.answer .. "'. You won a diamond sword!"
                 else
-                    return true, "✓ Correct! The answer was '" .. question.answer .. "'. (Your inventory is full, sword not given)"
+                    return true, "✓ Correct! The answer was '" .. question.answer .. "'. (Could not give sword: " .. msg .. ")"
                 end
             else
                 return false, "✗ Wrong! The correct answer was '" .. question.answer .. "'."
