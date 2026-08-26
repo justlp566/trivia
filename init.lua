@@ -93,7 +93,7 @@ local function give_reward(player_name)
         return false, "Could not access inventory"
     end
     
-    local diamond_sword = ItemStack("default:diamond_sword")
+    local diamond_sword = ItemStack("default:sword_diamond")
     
     if inv:room_for_item("main", diamond_sword) then
         inv:add_item("main", diamond_sword)
